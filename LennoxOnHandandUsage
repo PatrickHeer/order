@@ -1,0 +1,173 @@
+# 5/6/24 - this works but wont automatically open excel - need to fix path
+
+# next step : gui that allows you to choose files for reports
+
+from  openpyxl import load_workbook
+import openpyxl
+import os
+from GuiStart import EQOrderGui
+
+
+#path = r'\\fm2019\fdr\patrickh\Desktop\py\OrderingApp\Reports\On Hand\4_30ONHAND.xlsx'
+
+path = EQOrderGui().get_on_hand_file()
+
+class LennoxOrder():
+
+    def __init__(self, path):
+        self.wb = load_workbook(path)
+        self.ws = self.wb.worksheets[0]
+        self.d = None
+        self.d2 = None
+        self.ws2 = None
+        self.wb2 = None
+        
+        
+
+    #def load_book(self,path):
+       # self.wb = load_workbook(path)
+       # #self.ws = self.wb[self.wb.sheetnames]
+       # self.ws = self.wb.worksheets[0]
+
+       # return (self.wb,self.ws)
+
+
+    def read_on_hand(self):
+        all_rows = list(self.ws.rows)
+        all_columns = list(self.ws.columns)
+
+        self.d = {}
+
+
+        for row in all_rows[0:self.ws.max_row +1]:
+            model = row[0].value
+            #6 is correct, 7 grabs date
+            onHand = row[6].value
+            description = row[2].value
+
+            for cell in row:
+                try:
+                    if "Lennox" in cell.value or "LENNOX" in cell.value or "lennox" in cell.value or "RAB" in cell.value:                  
+                        if "cx35" in model or "CX35" in model or "CR33" in model or "cr33" in model:
+                            model = model[0:4] + "-" + model[4::]
+                        
+                        
+                        print(f"{model}")
+                        print(f"{onHand}")
+                    
+                        self.d[f"{model}"] = f"{onHand}"
+                except (AttributeError, TypeError):
+                    continue
+                    return self.d
+
+
+
+
+    def update_on_hand(self):
+            
+        path2 = r'\\fm2019\fdr\patrickh\Desktop\py\OrderingApp\Lennox\Template.xlsx'
+        self.wb2 = load_workbook(path2)
+
+        self.ws2 = self.wb2['LennoxOrderTemplate']
+
+        mr = self.ws.max_row
+        mc = self.ws.max_column
+
+
+
+        #Changed row length from 73 to 79 to try to include accessories, have not tested yet - 8/27
+        for i in range(1,79):
+            for j in range(3,4):
+
+                try: 
+                    #c = ws.cell(row = i, column = 1)
+                    f = self.ws.cell(row = i, column = 9)
+                    c2 = self.ws2.cell(row = i, column = 1)
+                       
+                            
+                    if c2.value in self.d:
+                        for row in self.ws.all_rows[7:204]:    
+
+                    
+                            self.ws2.cell(row = i, column = j).value = self.d.get(c2.value)
+                        #else:
+                           # ws2.cell.value = ws2.cell.value    
+                except (AttributeError, TypeError):
+                    continue
+
+
+
+
+    def read_usage(self):
+            
+
+        path3 = r'\\fm2019\fdr\patrickh\Desktop\py\OrderingApp\Reports\Usage\5_1_6_30_USAGE.xlsx'
+
+
+        wb = load_workbook(path3)
+
+        ws = wb['5_1_6_30_USAGE']
+        all_rows = list(ws.rows)
+        all_columns = list(ws.columns)
+
+        self.d2 = {}
+
+
+        for row in all_rows[0:ws.max_row +1]:
+            model = row[0].value
+            issued = row[7].value
+            description = row[3].value
+
+            for cell in row:
+                try:
+                    if "Lennox" in cell.value or "LENNOX" in cell.value or "lennox" in cell.value:                  
+                        if "cx35" in model or "CX35" in model or "CR33" in model or "cr33" in model:
+                            model = model[0:4] + "-" + model[4::]
+                        print(f"{model}")
+                        print(f"{issued}")
+                        self.d2[f"{model}"] = f"{issued}"
+                except (AttributeError, TypeError):
+                    continue
+                    return self.d2       
+
+
+    def update_usage(self):
+
+        mr = self.ws.max_row
+        mc = self.ws.max_column
+
+
+
+        #Changed Row Length from 73 to 79  to include accessories, have not tested yet 8/27
+        for i in range(2,79):
+            for j in range(10,14):
+
+                try: 
+                        
+                    f = self.ws.cell(row = i, column = 9)
+                    c2 = self.ws2.cell(row = i, column = 1)
+                       
+                            
+                    if c2.value in self.d2:
+                        for row in self.ws.all_rows[7:204]:    
+
+                            self.ws2.cell(row = i, column = 3).value = self.ws2.cell(row = i, column = 3).value
+                            self.ws2.cell(row = i, column = 11).value = self.d2.get(c2.value)
+                    else:
+                        continue       
+                except (AttributeError, TypeError):
+                    continue
+
+    def save_and_load_template(self):
+        self.wb2.save(str(r'\\fm2019\fdr\patrickh\Desktop\py\OrderingApp\Lennox\Template.xlsx'))
+
+        os.system("start EXCEL.EXE \\fm2019\fdr\patrickh\Desktop\py\OrderingApp\Lennox\Template.xlsx")
+L = LennoxOrder(path)
+
+L.read_on_hand()
+L.update_on_hand()
+L.read_usage()
+L.update_usage()
+L.save_and_load_template()
+
+
